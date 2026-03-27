@@ -1,8 +1,13 @@
+import api from "../services/api";
 import React, { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import logoImg from "../assets/logotipo.jpg";
 import { Input } from "../components/Inputs";
 
 const RegisterPage = () => {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     usuario: "",
     senha: "",
@@ -10,13 +15,13 @@ const RegisterPage = () => {
     peso: "",
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     setForm({ ...form, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!form.usuario || !form.senha || !form.idade || !form.peso) {
@@ -24,8 +29,25 @@ const RegisterPage = () => {
       return;
     }
 
-    console.log("Formulário validado e enviado");
-    setForm({ usuario: "", senha: "", idade: "", peso: "" });
+    setLoading(true);
+
+    try {
+      const response = await api.post("/users/register", form);
+
+      console.log("Resposta do Servidor:", response.data.message);
+      alert("Usuário cadastrado com sucesso!");
+      navigate("/login");
+    } catch (error) {
+      if (error.response) {
+        alert(error.response.data.message);
+      } else if (error.request) {
+        alert("Erro: O servidor não está respondendo.");
+      } else {
+        alert("Erro ao processar o cadastro.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,6 +67,7 @@ const RegisterPage = () => {
           <Input
             placeholder="Sua Senha:"
             name="senha"
+            type="password"
             onChange={handleChange}
             value={form.senha}
             required
@@ -75,9 +98,10 @@ const RegisterPage = () => {
 
           <button
             type="submit"
+            disabled={loading}
             className="bg-brand-mdblue text-white rounded-lg transition-all active:scale-95 cursor-pointer p-3 w-full hover:bg-brand-lgblue font-medium"
           >
-            Cadastrar
+            {loading ? "Cadastrando" : "Cadastrar"}
           </button>
         </form>
       </main>
