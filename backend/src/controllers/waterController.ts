@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import logger from "../utils/logger.js";
 import WaterLog from "../models/WaterLog.js";
+import jwt from "jsonwebtoken";
 
 export const addWaterLog = async (req: Request, res: Response) => {
   try {
-    const { amount, userId } = req.body;
+    const { amount } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({
@@ -13,11 +14,27 @@ export const addWaterLog = async (req: Request, res: Response) => {
       });
     }
 
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Não autorizado." });
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "chave_muito_secreta_1_2_1_2_2",
+    ) as { id: string };
+
     const newLog = await WaterLog.create({
       amount,
-      userId,
+      userId: decoded.id,
     });
-    logger.info(`Log de água registrado: ${amount}ml para o usuário ${userId}`);
+
+    logger.info(
+      `Log de água registrado: ${amount}ml para o usuário ${decoded.id}`,
+    );
 
     return res.status(201).json({
       success: true,
@@ -25,7 +42,6 @@ export const addWaterLog = async (req: Request, res: Response) => {
     });
   } catch (e: any) {
     logger.error(`Erro ao salvar log de água: ${e.message}`);
-
     return res.status(500).json({
       success: false,
       message: "Erro interno no servidor ao tentar salvar os dados.",
@@ -35,38 +51,42 @@ export const addWaterLog = async (req: Request, res: Response) => {
 
 export const getWaterLogs = async (req: Request, res: Response) => {
   try {
-    const { userId, date } = req.query;
-
-    if (!userId || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "UserId e Date são obrigatórios na URL.",
-      });
+    const { date } = req.query;
+    if (!date) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Data obrigatória." });
     }
+
+    const token = req.cookies.token;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "chave...") as {
+      id: string;
+    };
+    const userId = decoded.id;
+
+    const startOfDay = new Date(`${date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
     const logs = await WaterLog.find({
       userId,
-      createdAt: { $regex: `^${date}` },
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
     }).sort({ createdAt: -1 });
 
     const totalMl = logs.reduce((acc, log) => acc + log.amount, 0);
 
-    logger.info(
-      `Logs de ${date} recuperados com sucesso para o usuário ${userId}. Total: ${totalMl}ml`,
-    );
-
     return res.status(200).json({
       success: true,
-      count: logs.length,
       totalMl,
       data: logs,
     });
   } catch (e: any) {
     logger.error(`Erro ao buscar logs de água: ${e.message}`);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao buscar histórico de água.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao buscar histórico." });
   }
 };
 

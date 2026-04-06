@@ -12,42 +12,37 @@ const WaterModule = () => {
   const percentage = Math.min((totalIngerido / metaDiaria) * 100, 100);
 
   // Função para buscar peso, calcular meta diária e buscar consumo do dia
+  const loadWaterModuleData = async () => {
+    try {
+      const userResponse = await api.get("/users/me");
+      const peso = userResponse.data.peso;
+      setMetaDiaria(peso ? peso * 35 : 2000);
+
+      const todayDate = new Date().toISOString().split("T")[0];
+      const waterResponse = await api.get(`/water?date=${todayDate}`);
+
+      setTotalIngerido(waterResponse.data.totalMl || 0);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    }
+  };
+
   useEffect(() => {
-    const loadWaterModuleData = async () => {
-      try {
-        const userResponse = await api.get("/users/me");
-        const peso = userResponse.data.peso;
-
-        if (peso) {
-          setMetaDiaria(peso * 35);
-        } else {
-          setMetaDiaria(2000);
-        }
-      } catch (error: any) {
-        console.error("Erro ao buscar peso do usuário", error);
-        setMetaDiaria(2000);
-      }
-
-      try {
-        const todayDate = new Date().toISOString().split("T")[0];
-
-        const waterResponse = await api.get(`/water?date=${todayDate}`);
-
-        setTotalIngerido(waterResponse.data.totalMl || 0);
-      } catch (error: any) {
-        console.error("Erro ao buscar consumo de água de hoje:", error);
-      }
-    };
-
     loadWaterModuleData();
   }, []);
 
-  // Função para adicionar água
-  const handleAddWater = () => {
+  const handleAddWater = async () => {
     const volume = Number(inputValue);
     if (volume > 0 && !isNaN(volume)) {
-      setTotalIngerido((prev) => prev + volume);
-      setInputValue("");
+      try {
+        await api.post("/water", { amount: volume });
+
+        await loadWaterModuleData();
+
+        setInputValue("");
+      } catch (error) {
+        alert("Erro ao salvar no servidor.");
+      }
     }
   };
 
