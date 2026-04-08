@@ -69,3 +69,40 @@ export const handleLogin = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };
+
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Sessão expirada. Faça login novamente." });
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "chave_muito_secreta_1_2_1_2_2",
+    ) as { id: string };
+
+    const user = await User.findById(decoded.id).select("-senha");
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    return res.status(200).json(user);
+  } catch (error: any) {
+    logger.error(`Erro no getMe: ${error.message}`);
+    return res.status(401).json({ message: "Token inválido." });
+  }
+};
+
+export const logoutUser = (req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  return res.status(200).json({ message: "Logout efetuado com sucesso." });
+};
