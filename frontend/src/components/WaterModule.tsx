@@ -81,11 +81,16 @@ const WaterModule = () => {
         <input
           type="number"
           value={inputValue}
+          data-testid="water-input"
           onChange={(e) => setInputValue(e.target.value)}
           className="border p-1 rounded"
         />
       </label>
-      <Button className="my-4" onClick={handleAddWater}>
+      <Button
+        className="my-4"
+        data-testid="water-button"
+        onClick={handleAddWater}
+      >
         Registrar Valor
       </Button>
       <div className="border rounded w-96 h-20 overflow-y-scroll text-sm px-3 py-1">

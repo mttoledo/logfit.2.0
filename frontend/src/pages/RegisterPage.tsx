@@ -63,6 +63,7 @@ const RegisterPage = () => {
             onChange={handleChange}
             value={form.usuario}
             required
+            data-testid="input-usuario"
           ></Input>
           <Input
             placeholder="Sua Senha:"
@@ -71,6 +72,7 @@ const RegisterPage = () => {
             onChange={handleChange}
             value={form.senha}
             required
+            data-testid="input-senha"
           ></Input>
           <Input
             placeholder="Sua Idade:"
@@ -79,6 +81,7 @@ const RegisterPage = () => {
             onChange={handleChange}
             value={form.idade}
             required
+            data-testid="input-idade"
           ></Input>
           <Input
             placeholder="Seu Peso:"
@@ -87,6 +90,7 @@ const RegisterPage = () => {
             onChange={handleChange}
             value={form.peso}
             required
+            data-testid="input-peso"
           ></Input>
 
           <p className="text-white text-center">
@@ -102,6 +106,7 @@ const RegisterPage = () => {
           <button
             type="submit"
             disabled={loading}
+            data-testid="register-button"
             className="bg-brand-mdblue text-white rounded-lg transition-all active:scale-95 cursor-pointer p-3 w-full hover:bg-brand-lgblue font-medium"
           >
             {loading ? "Cadastrando" : "Cadastrar"}

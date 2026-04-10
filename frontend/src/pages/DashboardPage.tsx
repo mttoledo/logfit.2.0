@@ -8,7 +8,6 @@ const DashboardPage = () => {
       <Header />
       <main className="grid grid-cols-[repeat(2,minmax(0,490px))] gap-4 m-auto max-w-250">
         <WaterModule />
-        <WaterModule />
       </main>
     </div>
   );
